@@ -1,0 +1,15 @@
+/dataset/
+.venv/
+.idea/
+.ipynb_checkpoints/
+__pycache__/
+.DS_Store
+/checkpoints/
+/dataset_v2/
+/.local/
+*.pt
+/reports/base_split.json
+/reports/baseline_v1/
+/reports/data_v2_inventory.csv
+/reports/data_v2_duplicate_groups.json
+/reports/data_v2_review_decisions.csv
