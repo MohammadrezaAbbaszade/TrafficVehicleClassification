@@ -1,0 +1,63 @@
+{
+  "ambulance": {
+    "precision": 0.4166666666666667,
+    "recall": 1.0,
+    "f1-score": 0.5882352941176471,
+    "support": 10.0
+  },
+  "autobus": {
+    "precision": 0.5,
+    "recall": 0.4,
+    "f1-score": 0.4444444444444444,
+    "support": 10.0
+  },
+  "kamyun": {
+    "precision": 0.625,
+    "recall": 0.5,
+    "f1-score": 0.5555555555555556,
+    "support": 10.0
+  },
+  "kamyunet": {
+    "precision": 0.5,
+    "recall": 0.5,
+    "f1-score": 0.5,
+    "support": 10.0
+  },
+  "minibus": {
+    "precision": 0.6666666666666666,
+    "recall": 0.2,
+    "f1-score": 0.3076923076923077,
+    "support": 10.0
+  },
+  "savari": {
+    "precision": 0.5714285714285714,
+    "recall": 0.8,
+    "f1-score": 0.6666666666666666,
+    "support": 10.0
+  },
+  "taxi": {
+    "precision": 0.625,
+    "recall": 0.5,
+    "f1-score": 0.5555555555555556,
+    "support": 10.0
+  },
+  "vanet": {
+    "precision": 0.6,
+    "recall": 0.3,
+    "f1-score": 0.4,
+    "support": 10.0
+  },
+  "accuracy": 0.525,
+  "macro avg": {
+    "precision": 0.5630952380952381,
+    "recall": 0.525,
+    "f1-score": 0.5022687280040221,
+    "support": 80.0
+  },
+  "weighted avg": {
+    "precision": 0.5630952380952381,
+    "recall": 0.525,
+    "f1-score": 0.5022687280040221,
+    "support": 80.0
+  }
+}
