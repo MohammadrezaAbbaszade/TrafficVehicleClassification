@@ -1,0 +1,2 @@
+#!/bin/sh
+exec python3 .githooks/nda_guard.py --push
