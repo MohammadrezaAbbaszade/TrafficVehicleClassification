@@ -59,5 +59,10 @@
     "recall": 0.525,
     "f1-score": 0.5022687280040221,
     "support": 80.0
+  },
+  "data_split": {
+    "status": "previous_run_not_current_split",
+    "training_images": 320,
+    "validation_images": 80
   }
 }

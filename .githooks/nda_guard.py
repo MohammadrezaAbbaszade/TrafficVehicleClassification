@@ -12,8 +12,8 @@ def git(*args):
 
 def inspect(ref, paths):
     for path in paths:
-        if (path.startswith(('dataset/', 'dataset_v2/', 'checkpoints/', '.local/', 'reports/baseline_v1/'))
-            or path in {'reports/base_split.json', 'reports/data_v2_inventory.csv', 'reports/data_v2_duplicate_groups.json', 'reports/data_v2_review_decisions.csv'}
+        if (path.startswith(('dataset/', 'dataset_v2/', 'dataset_extra/', 'checkpoints/', '.local/', 'reports/baseline_v1/'))
+            or path in {'reports/base_split.json', 'reports/data_review_decisions.csv', 'reports/data_v2_inventory.csv', 'reports/data_v2_duplicate_groups.json', 'reports/data_v2_review_decisions.csv'}
             or PurePosixPath(path).suffix.lower() in {'.pt', '.jpg', '.jpeg', '.webp', '.bmp'}):
             raise ValueError(f'Confidential artifact: {path}')
         if path.endswith('.ipynb'):

@@ -13,3 +13,8 @@ __pycache__/
 /reports/data_v2_inventory.csv
 /reports/data_v2_duplicate_groups.json
 /reports/data_v2_review_decisions.csv
+/dataset_extra/
+/reports/data_review_decisions.csv
+/reports/*split*.json
+/reports/*inventory*.csv
+/reports/*duplicate*.json
