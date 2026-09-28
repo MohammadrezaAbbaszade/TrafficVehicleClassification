@@ -216,6 +216,9 @@ def make_model(experiment, device):
         if not prior_path.exists():
             raise FileNotFoundError('Run resnet_feature before resnet_layer4.')
         prior = torch.load(prior_path, map_location='cpu', weights_only=True)
+        current_fingerprint = json.loads((ROOT / 'reports/base_split.json').read_text())['fingerprint']
+        if prior['split_fingerprint'] != current_fingerprint:
+            raise ValueError('Feature-extraction checkpoint belongs to a different data split.')
         model = models.resnet18(weights=None)
         model.fc = nn.Linear(model.fc.in_features, 8)
         model.load_state_dict(prior['model_state_dict'])

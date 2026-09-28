@@ -1,68 +1,68 @@
 {
   "ambulance": {
-    "precision": 0.4166666666666667,
-    "recall": 1.0,
-    "f1-score": 0.5882352941176471,
-    "support": 10.0
+    "precision": 0.7424242424242424,
+    "recall": 0.9074074074074074,
+    "f1-score": 0.8166666666666667,
+    "support": 54.0
   },
   "autobus": {
-    "precision": 0.5,
-    "recall": 0.4,
-    "f1-score": 0.4444444444444444,
-    "support": 10.0
+    "precision": 0.9074074074074074,
+    "recall": 0.8305084745762712,
+    "f1-score": 0.8672566371681416,
+    "support": 59.0
   },
   "kamyun": {
-    "precision": 0.625,
-    "recall": 0.5,
-    "f1-score": 0.5555555555555556,
-    "support": 10.0
+    "precision": 0.7450980392156863,
+    "recall": 0.6333333333333333,
+    "f1-score": 0.6846846846846847,
+    "support": 60.0
   },
   "kamyunet": {
-    "precision": 0.5,
-    "recall": 0.5,
-    "f1-score": 0.5,
-    "support": 10.0
+    "precision": 0.6065573770491803,
+    "recall": 0.6379310344827587,
+    "f1-score": 0.6218487394957983,
+    "support": 58.0
   },
   "minibus": {
-    "precision": 0.6666666666666666,
-    "recall": 0.2,
-    "f1-score": 0.3076923076923077,
-    "support": 10.0
+    "precision": 0.9565217391304348,
+    "recall": 0.7857142857142857,
+    "f1-score": 0.8627450980392157,
+    "support": 56.0
   },
   "savari": {
-    "precision": 0.5714285714285714,
-    "recall": 0.8,
-    "f1-score": 0.6666666666666666,
-    "support": 10.0
+    "precision": 0.8947368421052632,
+    "recall": 0.85,
+    "f1-score": 0.8717948717948718,
+    "support": 60.0
   },
   "taxi": {
-    "precision": 0.625,
-    "recall": 0.5,
-    "f1-score": 0.5555555555555556,
-    "support": 10.0
+    "precision": 0.9016393442622951,
+    "recall": 0.9166666666666666,
+    "f1-score": 0.9090909090909091,
+    "support": 60.0
   },
   "vanet": {
-    "precision": 0.6,
-    "recall": 0.3,
-    "f1-score": 0.4,
-    "support": 10.0
+    "precision": 0.7746478873239436,
+    "recall": 0.9166666666666666,
+    "f1-score": 0.8396946564885496,
+    "support": 60.0
   },
-  "accuracy": 0.525,
+  "accuracy": 0.8094218415417559,
   "macro avg": {
-    "precision": 0.5630952380952381,
-    "recall": 0.525,
-    "f1-score": 0.5022687280040221,
-    "support": 80.0
+    "precision": 0.8161291098648067,
+    "recall": 0.8097784836059237,
+    "f1-score": 0.8092227829286047,
+    "support": 467.0
   },
   "weighted avg": {
-    "precision": 0.5630952380952381,
-    "recall": 0.525,
-    "f1-score": 0.5022687280040221,
-    "support": 80.0
+    "precision": 0.8165756277570326,
+    "recall": 0.8094218415417559,
+    "f1-score": 0.8093468978531341,
+    "support": 467.0
   },
   "data_split": {
-    "status": "previous_run_not_current_split",
-    "training_images": 320,
-    "validation_images": 80
+    "fingerprint": "8af511474c6c13210c33b37470f3415e84d0a1ff9cdb9932260ab73f2913f88a",
+    "training_images": 1864,
+    "validation_images": 467
   }
 }
