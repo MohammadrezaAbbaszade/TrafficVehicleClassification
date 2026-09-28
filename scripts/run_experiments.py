@@ -21,7 +21,7 @@ from PIL import Image, ImageOps
 from sklearn.metrics import classification_report, confusion_matrix
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, Sampler
-from torchvision import models, transforms
+from torchvision import transforms
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED = 42
@@ -180,13 +180,8 @@ def provisional_unclean_rows(manifest, train_rows, val_rows):
 
 
 def make_loaders(manifest, train_rows, val_rows, experiment):
-    resnet = experiment in {'resnet_feature', 'resnet_layer4'}
-    if resnet:
-        weights = models.ResNet18_Weights.DEFAULT
-        train_transform = val_transform = weights.transforms()
-    else:
-        train_transform = cnn_transform(augment=experiment in {'augment', 'regularized'})
-        val_transform = cnn_transform()
+    train_transform = cnn_transform(augment=experiment in {'augment', 'regularized'})
+    val_transform = cnn_transform()
     if experiment == 'unclean_as_labeled':
         train_rows = train_rows + provisional_unclean_rows(manifest, train_rows, val_rows)
     if experiment in {'imbalance_shuffle', 'balanced_batches'}:
@@ -204,48 +199,10 @@ def make_loaders(manifest, train_rows, val_rows, experiment):
 
 
 def make_model(experiment, device):
-    if experiment == 'resnet_feature':
-        model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-        in_features = model.fc.in_features
-        for param in model.parameters():
-            param.requires_grad_(False)
-        model.fc = nn.Linear(in_features, 8)
-        groups = [{'params': model.fc.parameters(), 'lr': 1e-3}]
-    elif experiment == 'resnet_layer4':
-        prior_path = ROOT / 'checkpoints/resnet_feature_best.pt'
-        if not prior_path.exists():
-            raise FileNotFoundError('Run resnet_feature before resnet_layer4.')
-        prior = torch.load(prior_path, map_location='cpu', weights_only=True)
-        current_fingerprint = json.loads((ROOT / 'reports/base_split.json').read_text())['fingerprint']
-        if prior['split_fingerprint'] != current_fingerprint:
-            raise ValueError('Feature-extraction checkpoint belongs to a different data split.')
-        model = models.resnet18(weights=None)
-        model.fc = nn.Linear(model.fc.in_features, 8)
-        model.load_state_dict(prior['model_state_dict'])
-        for param in model.parameters():
-            param.requires_grad_(False)
-        for param in model.layer4.parameters():
-            param.requires_grad_(True)
-        for param in model.fc.parameters():
-            param.requires_grad_(True)
-        groups = [
-            {'params': model.layer4.parameters(), 'lr': 1e-5},
-            {'params': model.fc.parameters(), 'lr': 1e-3},
-        ]
-    else:
-        model = VehicleCNN(pool='avg' if experiment == 'avg_pool' else 'max',
-                           dropout=0.3 if experiment in {'dropout', 'regularized'} else 0.0)
-        groups = [{'params': model.parameters(), 'lr': 1e-3}]
+    model = VehicleCNN(pool='avg' if experiment == 'avg_pool' else 'max',
+                       dropout=0.3 if experiment in {'dropout', 'regularized'} else 0.0)
+    groups = [{'params': model.parameters(), 'lr': 1e-3}]
     return model.to(device), groups
-
-
-def keep_frozen_batchnorm_in_eval(model):
-    # model.train() would otherwise update running statistics in a frozen backbone.
-    for module in model.modules():
-        if isinstance(module, nn.BatchNorm2d) and not any(
-            param.requires_grad for param in module.parameters(recurse=False)
-        ):
-            module.eval()
 
 
 def batch_loss(scores, labels, experiment):
@@ -257,7 +214,6 @@ def batch_loss(scores, labels, experiment):
 
 def run_epoch(model, loader, optimizer, device, experiment):
     model.train()
-    keep_frozen_batchnorm_in_eval(model)
     total_loss = correct = count = 0
     for images, labels in loader:
         images, labels = images.to(device), labels.to(device)
@@ -363,7 +319,7 @@ def run(experiment, epochs):
         'configuration': {
             'seed': SEED, 'batch_size': BATCH_SIZE,
             'loss': 'BCEWithLogitsLoss with one-hot float targets' if experiment=='bce' else 'CrossEntropyLoss',
-            'preprocessing': 'ResNet18_Weights.DEFAULT.transforms()' if experiment.startswith('resnet') else 'RGB pad 128; ToTensor; Normalize(0.5,0.5)',
+            'preprocessing': 'RGB pad 128; ToTensor; Normalize(0.5,0.5)',
             'simulated_imbalance': experiment in {'imbalance_shuffle','balanced_batches'},
             'unclean_policy': 'known classes as labelled, provisional; exact duplicates and label conflicts excluded' if experiment=='unclean_as_labeled' else 'excluded',
             'unclean_training_images': sum(Path(row['path']).parts[1]=='unclean' for row in used_train_rows),
@@ -377,7 +333,7 @@ def run(experiment, epochs):
     checkpoint_dir = ROOT / 'checkpoints'
     checkpoint_dir.mkdir(exist_ok=True)
     torch.save({
-        'architecture': 'ResNet18' if experiment.startswith('resnet') else 'VehicleCNN',
+        'architecture': 'VehicleCNN',
         'strategy': experiment, 'model_state_dict': best_state,
         'class_to_idx': manifest['class_to_idx'],
         'split_fingerprint': manifest['fingerprint'],
@@ -394,7 +350,6 @@ if __name__ == '__main__':
     parser.add_argument('experiment', choices=[
         'baseline', 'unclean_as_labeled', 'augment', 'dropout', 'avg_pool', 'adamw', 'scheduler',
         'regularized', 'imbalance_shuffle', 'balanced_batches', 'bce',
-        'resnet_feature', 'resnet_layer4',
     ])
     parser.add_argument('--epochs', type=int, default=10)
     args = parser.parse_args()
