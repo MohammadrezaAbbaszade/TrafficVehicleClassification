@@ -15,5 +15,9 @@
   "seed": 42,
   "validation_ratio": 0.2,
   "validation_frozen": true,
-  "unclean_training_images": 0
+  "unclean_training_images": 0,
+  "neysan_target_label": "vanet",
+  "neysan_training_images": 188,
+  "neysan_near_validation_quarantined": 15,
+  "neysan_holdout_images": 47
 }
