@@ -13,5 +13,7 @@
   "unclean_pending": 1755,
   "neysan_pending": 250,
   "seed": 42,
-  "validation_ratio": 0.2
+  "validation_ratio": 0.2,
+  "validation_frozen": true,
+  "unclean_training_images": 0
 }
