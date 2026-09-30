@@ -748,5 +748,265 @@
       "neysan_training_images": 188,
       "neysan_near_validation_quarantined": 15
     }
+  },
+  "resnet18_feature_extraction": {
+    "experiment": "resnet18_feature_extraction",
+    "architecture": "ResNet18",
+    "training_mode": "pretrained backbone frozen; new 8-class fc trained",
+    "training_images": 3807,
+    "validation_images": 467,
+    "epochs": 30,
+    "selected_epoch": 30,
+    "selected_validation_loss_reported": 0.1942,
+    "selected_validation_accuracy_percent_reported": 92.9,
+    "highest_validation_accuracy_epoch": 23,
+    "highest_validation_accuracy_percent_reported": 94.4,
+    "milestones": {
+      "epoch_10": {
+        "epoch": 10,
+        "train_loss_reported": 0.179,
+        "val_loss_reported": 0.224,
+        "train_accuracy_percent_reported": 95.3,
+        "val_accuracy_percent_reported": 93.1
+      },
+      "epoch_23": {
+        "epoch": 23,
+        "train_loss_reported": 0.124,
+        "val_loss_reported": 0.203,
+        "train_accuracy_percent_reported": 96.5,
+        "val_accuracy_percent_reported": 94.4
+      },
+      "epoch_30": {
+        "epoch": 30,
+        "train_loss_reported": 0.104,
+        "val_loss_reported": 0.194,
+        "train_accuracy_percent_reported": 97.5,
+        "val_accuracy_percent_reported": 92.9
+      }
+    },
+    "history_reported": [
+      {
+        "epoch": 1,
+        "train_loss_reported": 1.216,
+        "val_loss_reported": 0.739,
+        "train_accuracy_percent_reported": 63.4,
+        "val_accuracy_percent_reported": 81.6
+      },
+      {
+        "epoch": 2,
+        "train_loss_reported": 0.245,
+        "val_loss_reported": 0.272,
+        "train_accuracy_percent_reported": 93.1,
+        "val_accuracy_percent_reported": 92.3
+      },
+      {
+        "epoch": 3,
+        "train_loss_reported": 0.238,
+        "val_loss_reported": 0.264,
+        "train_accuracy_percent_reported": 93.3,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 4,
+        "train_loss_reported": 0.224,
+        "val_loss_reported": 0.248,
+        "train_accuracy_percent_reported": 93.7,
+        "val_accuracy_percent_reported": 92.7
+      },
+      {
+        "epoch": 5,
+        "train_loss_reported": 0.215,
+        "val_loss_reported": 0.258,
+        "train_accuracy_percent_reported": 93.9,
+        "val_accuracy_percent_reported": 91.6
+      },
+      {
+        "epoch": 6,
+        "train_loss_reported": 0.211,
+        "val_loss_reported": 0.236,
+        "train_accuracy_percent_reported": 93.7,
+        "val_accuracy_percent_reported": 92.1
+      },
+      {
+        "epoch": 7,
+        "train_loss_reported": 0.204,
+        "val_loss_reported": 0.256,
+        "train_accuracy_percent_reported": 94.0,
+        "val_accuracy_percent_reported": 91.4
+      },
+      {
+        "epoch": 8,
+        "train_loss_reported": 0.193,
+        "val_loss_reported": 0.27,
+        "train_accuracy_percent_reported": 94.6,
+        "val_accuracy_percent_reported": 91.0
+      },
+      {
+        "epoch": 9,
+        "train_loss_reported": 0.184,
+        "val_loss_reported": 0.23,
+        "train_accuracy_percent_reported": 94.8,
+        "val_accuracy_percent_reported": 93.4
+      },
+      {
+        "epoch": 10,
+        "train_loss_reported": 0.179,
+        "val_loss_reported": 0.224,
+        "train_accuracy_percent_reported": 95.3,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 11,
+        "train_loss_reported": 0.173,
+        "val_loss_reported": 0.221,
+        "train_accuracy_percent_reported": 94.9,
+        "val_accuracy_percent_reported": 92.3
+      },
+      {
+        "epoch": 12,
+        "train_loss_reported": 0.168,
+        "val_loss_reported": 0.221,
+        "train_accuracy_percent_reported": 95.1,
+        "val_accuracy_percent_reported": 93.6
+      },
+      {
+        "epoch": 13,
+        "train_loss_reported": 0.161,
+        "val_loss_reported": 0.208,
+        "train_accuracy_percent_reported": 95.5,
+        "val_accuracy_percent_reported": 93.4
+      },
+      {
+        "epoch": 14,
+        "train_loss_reported": 0.157,
+        "val_loss_reported": 0.212,
+        "train_accuracy_percent_reported": 95.5,
+        "val_accuracy_percent_reported": 92.9
+      },
+      {
+        "epoch": 15,
+        "train_loss_reported": 0.152,
+        "val_loss_reported": 0.212,
+        "train_accuracy_percent_reported": 95.9,
+        "val_accuracy_percent_reported": 94.0
+      },
+      {
+        "epoch": 16,
+        "train_loss_reported": 0.147,
+        "val_loss_reported": 0.208,
+        "train_accuracy_percent_reported": 96.0,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 17,
+        "train_loss_reported": 0.145,
+        "val_loss_reported": 0.203,
+        "train_accuracy_percent_reported": 96.0,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 18,
+        "train_loss_reported": 0.141,
+        "val_loss_reported": 0.214,
+        "train_accuracy_percent_reported": 96.2,
+        "val_accuracy_percent_reported": 92.7
+      },
+      {
+        "epoch": 19,
+        "train_loss_reported": 0.133,
+        "val_loss_reported": 0.198,
+        "train_accuracy_percent_reported": 96.5,
+        "val_accuracy_percent_reported": 93.4
+      },
+      {
+        "epoch": 20,
+        "train_loss_reported": 0.131,
+        "val_loss_reported": 0.207,
+        "train_accuracy_percent_reported": 96.4,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 21,
+        "train_loss_reported": 0.129,
+        "val_loss_reported": 0.2,
+        "train_accuracy_percent_reported": 96.6,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 22,
+        "train_loss_reported": 0.126,
+        "val_loss_reported": 0.219,
+        "train_accuracy_percent_reported": 96.3,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 23,
+        "train_loss_reported": 0.124,
+        "val_loss_reported": 0.203,
+        "train_accuracy_percent_reported": 96.5,
+        "val_accuracy_percent_reported": 94.4
+      },
+      {
+        "epoch": 24,
+        "train_loss_reported": 0.118,
+        "val_loss_reported": 0.216,
+        "train_accuracy_percent_reported": 97.1,
+        "val_accuracy_percent_reported": 92.7
+      },
+      {
+        "epoch": 25,
+        "train_loss_reported": 0.119,
+        "val_loss_reported": 0.226,
+        "train_accuracy_percent_reported": 96.6,
+        "val_accuracy_percent_reported": 91.6
+      },
+      {
+        "epoch": 26,
+        "train_loss_reported": 0.114,
+        "val_loss_reported": 0.203,
+        "train_accuracy_percent_reported": 97.2,
+        "val_accuracy_percent_reported": 92.7
+      },
+      {
+        "epoch": 27,
+        "train_loss_reported": 0.111,
+        "val_loss_reported": 0.204,
+        "train_accuracy_percent_reported": 97.1,
+        "val_accuracy_percent_reported": 92.9
+      },
+      {
+        "epoch": 28,
+        "train_loss_reported": 0.112,
+        "val_loss_reported": 0.203,
+        "train_accuracy_percent_reported": 97.1,
+        "val_accuracy_percent_reported": 93.1
+      },
+      {
+        "epoch": 29,
+        "train_loss_reported": 0.105,
+        "val_loss_reported": 0.216,
+        "train_accuracy_percent_reported": 97.3,
+        "val_accuracy_percent_reported": 92.9
+      },
+      {
+        "epoch": 30,
+        "train_loss_reported": 0.104,
+        "val_loss_reported": 0.194,
+        "train_accuracy_percent_reported": 97.5,
+        "val_accuracy_percent_reported": 92.9
+      }
+    ],
+    "reporting_note": "Metrics were transcribed from rounded notebook output. Epoch 10 is a milestone within the same continuous 30-epoch run, not a separate experiment. The minimum-validation-loss state (epoch 30) was loaded into the in-memory model; the notebook includes a local checkpoint-saving cell. The epoch-23 state was not retained.",
+    "configuration": {
+      "batch_size": 32,
+      "loss": "CrossEntropyLoss",
+      "optimizer": "Adam",
+      "learning_rate": 0.001,
+      "pretrained_weights": "torchvision ResNet18_Weights.DEFAULT",
+      "preprocessing": "RGB; Resize((224, 224)); ToTensor; ImageNet mean/std normalization",
+      "backbone_batchnorm_mode": "eval",
+      "trainable_parameters": "fc.weight and fc.bias"
+    },
+    "selected_state_metric": "minimum validation loss"
   }
 }
