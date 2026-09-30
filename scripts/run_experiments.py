@@ -1,17 +1,15 @@
-"""Reproducible vehicle-classification comparisons on a frozen validation split.
+"""Reproducible vehicle-classification comparisons on the unified development split.
 
 Run from the project root. Raw images and checkpoints stay local under .gitignore.
 """
 from __future__ import annotations
 
 import argparse
-import csv
 import copy
-import hashlib
 import json
 import math
 import random
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -52,7 +50,12 @@ def manifest_data():
     rows = {row['path']: row for row in manifest['samples']}
     train = [rows[path] for path in manifest['training_paths']]
     val = [rows[path] for path in manifest['validation_paths']]
+    if manifest.get('schema_version') != 2:
+        raise ValueError('Run scripts/data_split.py --write to build the unified split.')
     assert {r['content_hash'] for r in train}.isdisjoint({r['content_hash'] for r in val})
+    assert {r['near_duplicate_group'] for r in train}.isdisjoint(
+        {r['near_duplicate_group'] for r in val}
+    )
     return manifest, train, val
 
 
@@ -147,43 +150,9 @@ def simulated_imbalance(rows, class_to_idx):
     return retained
 
 
-def provisional_unclean_rows(manifest, train_rows, val_rows):
-    """As-labelled comparison only; these labels are not manually verified."""
-    review_path = ROOT / 'reports/data_review_decisions.csv'
-    if not review_path.exists():
-        raise FileNotFoundError('Run data audit before the unclean comparison.')
-    with review_path.open(newline='', encoding='utf-8') as file:
-        inventory = list(csv.DictReader(file))
-    labels_by_hash = defaultdict(set)
-    for row in inventory:
-        if row['content_hash']:
-            labels_by_hash[row['content_hash']].add(row['original_label'])
-    conflicts = {key for key, labels in labels_by_hash.items() if len(labels)>1}
-    excluded_hashes = {r['content_hash'] for r in train_rows+val_rows} | conflicts
-    extra = {}
-    for row in inventory:
-        parts = Path(row['path']).parts
-        if len(parts)<4 or parts[1]!='unclean' or row['original_label'] not in manifest['class_to_idx']:
-            continue
-        if row['decision']=='exclude':
-            continue
-        label = row['reviewed_label'] if row['decision']=='relabel' else row['original_label']
-        if label not in manifest['class_to_idx']:
-            raise ValueError(f"Invalid reviewed label for {row['path']}")
-        content_hash = row['content_hash']
-        if not content_hash or content_hash in excluded_hashes:
-            continue
-        extra.setdefault(content_hash, {'path':row['path'], 'label':label, 'content_hash':content_hash})
-    if not extra:
-        raise ValueError('No eligible unclean images after exact-content filtering.')
-    return sorted(extra.values(),key=lambda row: row['path'])
-
-
 def make_loaders(manifest, train_rows, val_rows, experiment):
     train_transform = cnn_transform(augment=experiment in {'augment', 'regularized'})
     val_transform = cnn_transform()
-    if experiment == 'unclean_as_labeled':
-        train_rows = train_rows + provisional_unclean_rows(manifest, train_rows, val_rows)
     if experiment in {'imbalance_shuffle', 'balanced_batches'}:
         train_rows = simulated_imbalance(train_rows, manifest['class_to_idx'])
     train_dataset = VehicleDataset(train_rows, train_transform, manifest['class_to_idx'])
@@ -321,13 +290,17 @@ def run(experiment, epochs):
             'loss': 'BCEWithLogitsLoss with one-hot float targets' if experiment=='bce' else 'CrossEntropyLoss',
             'preprocessing': 'RGB pad 128; ToTensor; Normalize(0.5,0.5)',
             'simulated_imbalance': experiment in {'imbalance_shuffle','balanced_batches'},
-            'unclean_policy': 'known classes as labelled, provisional; exact duplicates and label conflicts excluded' if experiment=='unclean_as_labeled' else 'excluded',
-            'unclean_training_images': sum(Path(row['path']).parts[1]=='unclean' for row in used_train_rows),
+            'unclean_policy': manifest['unclean_label_policy'],
+            'unclean_training_images': sum(row['source']=='unclean' for row in used_train_rows),
+            'neysan_training_images': sum(row['source']=='neysan' for row in used_train_rows),
             'optimizer': type(optimizer).__name__,
         },
     })
     report_path = ROOT / 'reports/experiment_results.json'
     reports = json.loads(report_path.read_text()) if report_path.exists() else {}
+    summary['result_status'] = 'current_split'
+    reports['_split'] = {'current_fingerprint': manifest['fingerprint'],
+                         'comparison_rule': 'Compare results only when split_fingerprint matches.'}
     reports[experiment] = summary
     report_path.write_text(json.dumps(reports, indent=2) + '\n')
     checkpoint_dir = ROOT / 'checkpoints'
@@ -348,7 +321,7 @@ def run(experiment, epochs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('experiment', choices=[
-        'baseline', 'unclean_as_labeled', 'augment', 'dropout', 'avg_pool', 'adamw', 'scheduler',
+        'baseline', 'augment', 'dropout', 'avg_pool', 'adamw', 'scheduler',
         'regularized', 'imbalance_shuffle', 'balanced_batches', 'bce',
     ])
     parser.add_argument('--epochs', type=int, default=10)

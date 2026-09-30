@@ -264,7 +264,8 @@
       "learning_rate": 0.001,
       "unclean_policy": "known-class labels as supplied; provisional, not manually verified",
       "unclean_training_images": 1755
-    }
+    },
+    "result_status": "historical_split"
   },
   "unclean_plus_neysan": {
     "accuracy": 0.8886509635974305,
@@ -747,7 +748,8 @@
       "known_unclean_training_images": 1755,
       "neysan_training_images": 188,
       "neysan_near_validation_quarantined": 15
-    }
+    },
+    "result_status": "historical_split"
   },
   "resnet18_feature_extraction": {
     "experiment": "resnet18_feature_extraction",
@@ -1007,6 +1009,12 @@
       "backbone_batchnorm_mode": "eval",
       "trainable_parameters": "fc.weight and fc.bias"
     },
-    "selected_state_metric": "minimum validation loss"
+    "selected_state_metric": "minimum validation loss",
+    "split_fingerprint": "8af511474c6c13210c33b37470f3415e84d0a1ff9cdb9932260ab73f2913f88a",
+    "result_status": "historical_split"
+  },
+  "_split": {
+    "current_fingerprint": "1b91af6943c721350b93dfbdff2b0875f7c9181acf74951419821c8fde1cca9c",
+    "comparison_rule": "Compare only matching split_fingerprint values; previous results used a different validation set."
   }
 }
