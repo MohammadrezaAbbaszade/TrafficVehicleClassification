@@ -18,3 +18,4 @@ __pycache__/
 /reports/*split*.json
 /reports/*inventory*.csv
 /reports/*duplicate*.json
+/reports/imbalance_indices.json

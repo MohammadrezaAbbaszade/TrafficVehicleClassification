@@ -2,37 +2,37 @@
   "inventory_images": 4360,
   "conflicting_exact_groups": 0,
   "excluded_exact_copies": 24,
-  "split_fingerprint": "1b91af6943c721350b93dfbdff2b0875f7c9181acf74951419821c8fde1cca9c",
+  "split_fingerprint": "39b8e96e75d46c92bdf7089d79260e00fc39d90a8ff44e0481525d87c48256c2",
   "eligible_unique_images": 4336,
-  "training_images": 3470,
-  "validation_images": 866,
+  "training_images": 3469,
+  "validation_images": 867,
   "training_by_class": {
     "ambulance": 329,
     "autobus": 416,
     "kamyun": 437,
-    "kamyunet": 405,
+    "kamyunet": 403,
     "minibus": 369,
-    "savari": 440,
-    "taxi": 435,
-    "vanet": 639
+    "savari": 441,
+    "taxi": 434,
+    "vanet": 640
   },
   "validation_by_class": {
-    "ambulance": 83,
+    "ambulance": 82,
     "autobus": 104,
     "kamyun": 109,
-    "kamyunet": 100,
+    "kamyunet": 102,
     "minibus": 92,
     "savari": 110,
     "taxi": 108,
     "vanet": 160
   },
   "training_by_source": {
-    "labelled": 1866,
+    "labelled": 1865,
     "unclean": 1405,
     "neysan": 199
   },
   "validation_by_source": {
-    "labelled": 466,
+    "labelled": 467,
     "unclean": 350,
     "neysan": 50
   },

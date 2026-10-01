@@ -120,9 +120,19 @@ class BalancedBatchSampler(Sampler[list[int]]):
     def __iter__(self):
         rng = random.Random(self.seed + self.epoch)
         self.epoch += 1
+        shuffled_buckets = {c: bucket.copy() for c, bucket in self.buckets.items()}
+        positions = {c: 0 for c in shuffled_buckets}
+        for bucket in shuffled_buckets.values():
+            rng.shuffle(bucket)
         for _ in range(self.num_batches):
-            batch = [rng.choice(self.buckets[c]) for c in sorted(self.buckets)
-                     for _ in range(self.per_class)]
+            batch = []
+            for c in sorted(shuffled_buckets):
+                for _ in range(self.per_class):
+                    if positions[c] == len(shuffled_buckets[c]):
+                        rng.shuffle(shuffled_buckets[c])
+                        positions[c] = 0
+                    batch.append(shuffled_buckets[c][positions[c]])
+                    positions[c] += 1
             rng.shuffle(batch)
             yield batch
 
@@ -130,21 +140,24 @@ class BalancedBatchSampler(Sampler[list[int]]):
         return self.num_batches
 
 
-def simulated_imbalance(rows, class_to_idx):
-    # Identical retained examples for shuffle and balanced-batch experiments.
+def simulated_imbalance(rows):
+    # Use only the labelled training pool; unclean images do not create imbalance.
+    # Retain the same positions for shuffle and balanced-batch experiments.
     rng = random.Random(SEED)
-    retained = []
     kept_positions = []
     for label in CLASS_LABELS:
-        positions = [i for i, row in enumerate(rows) if row['label'] == label]
+        positions = [i for i, row in enumerate(rows)
+                     if row['source'] == 'labelled' and row['label'] == label]
+        if not positions:
+            raise ValueError(f'No labelled training images for {label}.')
         if label in {'kamyun', 'kamyunet'}:
             positions = sorted(rng.sample(positions, max(1, len(positions)//4)))
         kept_positions.extend(positions)
-    for i in sorted(kept_positions):
-        retained.append(rows[i])
+    retained = [rows[i] for i in sorted(kept_positions)]
     private_file = ROOT / 'reports/imbalance_indices.json'
     private_file.write_text(json.dumps({
-        'seed': SEED, 'original_training_positions': sorted(kept_positions),
+        'seed': SEED, 'source': 'labelled training rows only',
+        'original_training_positions': sorted(kept_positions),
         'retained_class_counts': dict(Counter(row['label'] for row in retained)),
     }, indent=2) + '\n')
     return retained
@@ -154,7 +167,7 @@ def make_loaders(manifest, train_rows, val_rows, experiment):
     train_transform = cnn_transform(augment=experiment in {'augment', 'regularized'})
     val_transform = cnn_transform()
     if experiment in {'imbalance_shuffle', 'balanced_batches'}:
-        train_rows = simulated_imbalance(train_rows, manifest['class_to_idx'])
+        train_rows = simulated_imbalance(train_rows)
     train_dataset = VehicleDataset(train_rows, train_transform, manifest['class_to_idx'])
     val_dataset = VehicleDataset(val_rows, val_transform, manifest['class_to_idx'])
     if experiment == 'balanced_batches':
@@ -168,8 +181,10 @@ def make_loaders(manifest, train_rows, val_rows, experiment):
 
 
 def make_model(experiment, device):
+    dropout_p = (0.5 if experiment == 'dropout_05' else
+                 0.3 if experiment in {'dropout', 'regularized'} else 0.0)
     model = VehicleCNN(pool='avg' if experiment == 'avg_pool' else 'max',
-                       dropout=0.3 if experiment in {'dropout', 'regularized'} else 0.0)
+                       dropout=dropout_p)
     groups = [{'params': model.parameters(), 'lr': 1e-3}]
     return model.to(device), groups
 
@@ -247,10 +262,8 @@ def run(experiment, epochs):
     device = device_for_run()
     train_loader, val_loader, used_train_rows = make_loaders(manifest, train_rows, val_rows, experiment)
     model, groups = make_model(experiment, device)
-    if experiment in {'adamw', 'regularized'}:
-        optimizer = torch.optim.AdamW(groups, weight_decay=1e-4)
-    else:
-        optimizer = torch.optim.Adam(groups)
+    weight_decay = 1e-4 if experiment in {'weight_decay', 'regularized'} else 0.0
+    optimizer = torch.optim.Adam(groups, weight_decay=weight_decay)
     scheduler = (torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
                  if experiment in {'scheduler', 'regularized'} else None)
     print('experiment', experiment, 'device', device, 'train', len(used_train_rows),
@@ -290,10 +303,19 @@ def run(experiment, epochs):
             'loss': 'BCEWithLogitsLoss with one-hot float targets' if experiment=='bce' else 'CrossEntropyLoss',
             'preprocessing': 'RGB pad 128; ToTensor; Normalize(0.5,0.5)',
             'simulated_imbalance': experiment in {'imbalance_shuffle','balanced_batches'},
+            'imbalance_source': ('labelled_only' if experiment in {'imbalance_shuffle','balanced_batches'}
+                                 else None),
             'unclean_policy': manifest['unclean_label_policy'],
             'unclean_training_images': sum(row['source']=='unclean' for row in used_train_rows),
             'neysan_training_images': sum(row['source']=='neysan' for row in used_train_rows),
+            'architecture': type(model).__name__,
             'optimizer': type(optimizer).__name__,
+            'weight_decay': weight_decay,
+            'dropout_p': model.classifier[1].p,
+            'augmentation': ('RandomHorizontalFlip(p=0.5) on training only'
+                             if experiment in {'augment', 'regularized'} else 'none'),
+            'scheduler': ({'name': 'ReduceLROnPlateau', 'monitor': 'validation_loss',
+                           'factor': 0.5, 'patience': 2} if scheduler is not None else None),
         },
     })
     report_path = ROOT / 'reports/experiment_results.json'
@@ -306,7 +328,7 @@ def run(experiment, epochs):
     checkpoint_dir = ROOT / 'checkpoints'
     checkpoint_dir.mkdir(exist_ok=True)
     torch.save({
-        'architecture': 'VehicleCNN',
+        'architecture': type(model).__name__,
         'strategy': experiment, 'model_state_dict': best_state,
         'class_to_idx': manifest['class_to_idx'],
         'split_fingerprint': manifest['fingerprint'],
@@ -321,7 +343,7 @@ def run(experiment, epochs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('experiment', choices=[
-        'baseline', 'augment', 'dropout', 'avg_pool', 'adamw', 'scheduler',
+        'baseline', 'augment', 'dropout', 'dropout_05', 'avg_pool', 'weight_decay', 'scheduler',
         'regularized', 'imbalance_shuffle', 'balanced_batches', 'bce',
     ])
     parser.add_argument('--epochs', type=int, default=10)
