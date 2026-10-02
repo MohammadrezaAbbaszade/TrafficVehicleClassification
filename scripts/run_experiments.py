@@ -103,6 +103,28 @@ class VehicleCNN(nn.Module):
         return self.classifier(self.features(images))
 
 
+class VehicleCNN4(nn.Module):
+    """Baseline CNN plus two convolutions after the existing pooling blocks."""
+    def __init__(self, num_classes=8, third_channels=32, fourth_channels=None):
+        super().__init__()
+        fourth_channels = third_channels if fourth_channels is None else fourth_channels
+        self.third_channels = third_channels
+        self.feature_channels = fourth_channels
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 16, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(32, third_channels, 3, padding=1), nn.ReLU(),
+            nn.Conv2d(third_channels, fourth_channels, 3, padding=1), nn.ReLU(),
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(start_dim=1), nn.Dropout(0.0),
+            nn.Linear(fourth_channels * 32 * 32, num_classes),
+        )
+
+    def forward(self, images):
+        return self.classifier(self.features(images))
+
+
 class BalancedBatchSampler(Sampler[list[int]]):
     """Four examples of each of eight classes in every 32-image batch."""
     def __init__(self, labels, batch_size=BATCH_SIZE, seed=SEED):
@@ -183,8 +205,13 @@ def make_loaders(manifest, train_rows, val_rows, experiment):
 def make_model(experiment, device):
     dropout_p = (0.5 if experiment == 'dropout_05' else
                  0.3 if experiment in {'dropout', 'regularized'} else 0.0)
-    model = VehicleCNN(pool='avg' if experiment == 'avg_pool' else 'max',
-                       dropout=dropout_p)
+    if experiment in {'four_conv', 'four_conv_64', 'four_conv_128', 'four_conv_128'}:
+        third_channels = 64 if experiment in {'four_conv_64', 'four_conv_128'} else 32
+        fourth_channels = 128 if experiment == 'four_conv_128' else third_channels
+        model = VehicleCNN4(third_channels=third_channels, fourth_channels=fourth_channels)
+    else:
+        model = VehicleCNN(pool='avg' if experiment == 'avg_pool' else 'max',
+                           dropout=dropout_p)
     groups = [{'params': model.parameters(), 'lr': 1e-3}]
     return model.to(device), groups
 
@@ -309,6 +336,8 @@ def run(experiment, epochs):
             'unclean_training_images': sum(row['source']=='unclean' for row in used_train_rows),
             'neysan_training_images': sum(row['source']=='neysan' for row in used_train_rows),
             'architecture': type(model).__name__,
+            'third_feature_channels': getattr(model, 'third_channels', 32),
+            'final_feature_channels': getattr(model, 'feature_channels', 32),
             'optimizer': type(optimizer).__name__,
             'weight_decay': weight_decay,
             'dropout_p': model.classifier[1].p,
@@ -329,6 +358,8 @@ def run(experiment, epochs):
     checkpoint_dir.mkdir(exist_ok=True)
     torch.save({
         'architecture': type(model).__name__,
+        'third_feature_channels': getattr(model, 'third_channels', 32),
+        'final_feature_channels': getattr(model, 'feature_channels', 32),
         'strategy': experiment, 'model_state_dict': best_state,
         'class_to_idx': manifest['class_to_idx'],
         'split_fingerprint': manifest['fingerprint'],
@@ -343,7 +374,7 @@ def run(experiment, epochs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('experiment', choices=[
-        'baseline', 'augment', 'dropout', 'dropout_05', 'avg_pool', 'weight_decay', 'scheduler',
+        'baseline', 'augment', 'dropout', 'dropout_05', 'avg_pool', 'weight_decay', 'scheduler', 'four_conv', 'four_conv_64',
         'regularized', 'imbalance_shuffle', 'balanced_batches', 'bce',
     ])
     parser.add_argument('--epochs', type=int, default=10)
