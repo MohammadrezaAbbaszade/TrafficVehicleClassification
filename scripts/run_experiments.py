@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SEED = 42
 BATCH_SIZE = 32
 CLASS_LABELS = ('ambulance', 'autobus', 'kamyun', 'kamyunet', 'minibus', 'savari', 'taxi', 'vanet')
-REGULARIZED_EXPERIMENTS = {'regularized', 'four_conv_128_4pool_regularized'}
-FOUR_POOL_EXPERIMENTS = {'four_conv_128_4pool', 'four_conv_128_4pool_regularized'}
+REGULARIZED_EXPERIMENTS = {'regularized', 'four_conv_128_4pool_regularized', 'four_conv_128_4avgpool_regularized'}
+FOUR_POOL_EXPERIMENTS = {'four_conv_128_4pool', 'four_conv_128_4pool_regularized', 'four_conv_128_4avgpool_regularized'}
 
 
 def set_seed(seed=SEED):
@@ -108,24 +108,27 @@ class VehicleCNN(nn.Module):
 class VehicleCNN4(nn.Module):
     """Baseline CNN plus two convolutions after the existing pooling blocks."""
     def __init__(self, num_classes=8, third_channels=32, fourth_channels=None,
-                 pool_after_each=False, dropout=0.0):
+                 pool_after_each=False, dropout=0.0, pool='max'):
         super().__init__()
+        if pool not in {'max', 'avg'}:
+            raise ValueError('pool must be max or avg')
+        pool_layer = nn.MaxPool2d if pool == 'max' else nn.AvgPool2d
         fourth_channels = third_channels if fourth_channels is None else fourth_channels
         self.third_channels = third_channels
         self.feature_channels = fourth_channels
         self.pool_after_each = pool_after_each
         feature_layers = [
-            nn.Conv2d(3, 16, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
-            nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(3, 16, 3, padding=1), nn.ReLU(), pool_layer(2),
+            nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), pool_layer(2),
             nn.Conv2d(32, third_channels, 3, padding=1), nn.ReLU(),
         ]
         if pool_after_each:
-            feature_layers.append(nn.MaxPool2d(2))
+            feature_layers.append(pool_layer(2))
         feature_layers.extend([
             nn.Conv2d(third_channels, fourth_channels, 3, padding=1), nn.ReLU(),
         ])
         if pool_after_each:
-            feature_layers.append(nn.MaxPool2d(2))
+            feature_layers.append(pool_layer(2))
         self.features = nn.Sequential(*feature_layers)
         spatial_size = 8 if pool_after_each else 32
         self.classifier = nn.Sequential(
@@ -225,6 +228,7 @@ def make_model(experiment, device):
             fourth_channels=fourth_channels,
             pool_after_each=experiment in FOUR_POOL_EXPERIMENTS,
             dropout=dropout_p,
+            pool='avg' if experiment == 'four_conv_128_4avgpool_regularized' else 'max',
         )
     else:
         model = VehicleCNN(pool='avg' if experiment == 'avg_pool' else 'max',
@@ -356,6 +360,7 @@ def run(experiment, epochs):
             'third_feature_channels': getattr(model, 'third_channels', 32),
             'final_feature_channels': getattr(model, 'feature_channels', 32),
             'max_pool_layers': sum(isinstance(layer, nn.MaxPool2d) for layer in model.features),
+            'avg_pool_layers': sum(isinstance(layer, nn.AvgPool2d) for layer in model.features),
             'optimizer': type(optimizer).__name__,
             'weight_decay': weight_decay,
             'dropout_p': model.classifier[1].p,
@@ -379,6 +384,7 @@ def run(experiment, epochs):
         'third_feature_channels': getattr(model, 'third_channels', 32),
         'final_feature_channels': getattr(model, 'feature_channels', 32),
         'max_pool_layers': sum(isinstance(layer, nn.MaxPool2d) for layer in model.features),
+        'avg_pool_layers': sum(isinstance(layer, nn.AvgPool2d) for layer in model.features),
         'strategy': experiment, 'model_state_dict': best_state,
         'class_to_idx': manifest['class_to_idx'],
         'split_fingerprint': manifest['fingerprint'],
@@ -395,7 +401,7 @@ if __name__ == '__main__':
     parser.add_argument('experiment', choices=[
         'baseline', 'augment', 'dropout', 'dropout_05', 'avg_pool', 'weight_decay', 'scheduler',
         'four_conv', 'four_conv_64', 'four_conv_128', 'four_conv_128_4pool',
-        'four_conv_128_4pool_regularized',
+        'four_conv_128_4pool_regularized', 'four_conv_128_4avgpool_regularized',
         'regularized', 'imbalance_shuffle', 'balanced_batches', 'bce',
     ])
     parser.add_argument('--epochs', type=int, default=10)
