@@ -25,6 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SEED = 42
 BATCH_SIZE = 32
 CLASS_LABELS = ('ambulance', 'autobus', 'kamyun', 'kamyunet', 'minibus', 'savari', 'taxi', 'vanet')
+REGULARIZED_EXPERIMENTS = {'regularized', 'four_conv_128_4pool_regularized'}
+FOUR_POOL_EXPERIMENTS = {'four_conv_128_4pool', 'four_conv_128_4pool_regularized'}
 
 
 def set_seed(seed=SEED):
@@ -105,20 +107,30 @@ class VehicleCNN(nn.Module):
 
 class VehicleCNN4(nn.Module):
     """Baseline CNN plus two convolutions after the existing pooling blocks."""
-    def __init__(self, num_classes=8, third_channels=32, fourth_channels=None):
+    def __init__(self, num_classes=8, third_channels=32, fourth_channels=None,
+                 pool_after_each=False, dropout=0.0):
         super().__init__()
         fourth_channels = third_channels if fourth_channels is None else fourth_channels
         self.third_channels = third_channels
         self.feature_channels = fourth_channels
-        self.features = nn.Sequential(
+        self.pool_after_each = pool_after_each
+        feature_layers = [
             nn.Conv2d(3, 16, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
             nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
             nn.Conv2d(32, third_channels, 3, padding=1), nn.ReLU(),
+        ]
+        if pool_after_each:
+            feature_layers.append(nn.MaxPool2d(2))
+        feature_layers.extend([
             nn.Conv2d(third_channels, fourth_channels, 3, padding=1), nn.ReLU(),
-        )
+        ])
+        if pool_after_each:
+            feature_layers.append(nn.MaxPool2d(2))
+        self.features = nn.Sequential(*feature_layers)
+        spatial_size = 8 if pool_after_each else 32
         self.classifier = nn.Sequential(
-            nn.Flatten(start_dim=1), nn.Dropout(0.0),
-            nn.Linear(fourth_channels * 32 * 32, num_classes),
+            nn.Flatten(start_dim=1), nn.Dropout(dropout),
+            nn.Linear(fourth_channels * spatial_size * spatial_size, num_classes),
         )
 
     def forward(self, images):
@@ -186,7 +198,7 @@ def simulated_imbalance(rows):
 
 
 def make_loaders(manifest, train_rows, val_rows, experiment):
-    train_transform = cnn_transform(augment=experiment in {'augment', 'regularized'})
+    train_transform = cnn_transform(augment=experiment == 'augment' or experiment in REGULARIZED_EXPERIMENTS)
     val_transform = cnn_transform()
     if experiment in {'imbalance_shuffle', 'balanced_batches'}:
         train_rows = simulated_imbalance(train_rows)
@@ -204,11 +216,16 @@ def make_loaders(manifest, train_rows, val_rows, experiment):
 
 def make_model(experiment, device):
     dropout_p = (0.5 if experiment == 'dropout_05' else
-                 0.3 if experiment in {'dropout', 'regularized'} else 0.0)
-    if experiment in {'four_conv', 'four_conv_64', 'four_conv_128', 'four_conv_128'}:
-        third_channels = 64 if experiment in {'four_conv_64', 'four_conv_128'} else 32
-        fourth_channels = 128 if experiment == 'four_conv_128' else third_channels
-        model = VehicleCNN4(third_channels=third_channels, fourth_channels=fourth_channels)
+                 0.3 if experiment == 'dropout' or experiment in REGULARIZED_EXPERIMENTS else 0.0)
+    if experiment in {'four_conv', 'four_conv_64', 'four_conv_128'} | FOUR_POOL_EXPERIMENTS:
+        third_channels = 64 if experiment in {'four_conv_64', 'four_conv_128'} | FOUR_POOL_EXPERIMENTS else 32
+        fourth_channels = 128 if experiment == 'four_conv_128' or experiment in FOUR_POOL_EXPERIMENTS else third_channels
+        model = VehicleCNN4(
+            third_channels=third_channels,
+            fourth_channels=fourth_channels,
+            pool_after_each=experiment in FOUR_POOL_EXPERIMENTS,
+            dropout=dropout_p,
+        )
     else:
         model = VehicleCNN(pool='avg' if experiment == 'avg_pool' else 'max',
                            dropout=dropout_p)
@@ -289,10 +306,10 @@ def run(experiment, epochs):
     device = device_for_run()
     train_loader, val_loader, used_train_rows = make_loaders(manifest, train_rows, val_rows, experiment)
     model, groups = make_model(experiment, device)
-    weight_decay = 1e-4 if experiment in {'weight_decay', 'regularized'} else 0.0
+    weight_decay = 1e-4 if experiment == 'weight_decay' or experiment in REGULARIZED_EXPERIMENTS else 0.0
     optimizer = torch.optim.Adam(groups, weight_decay=weight_decay)
     scheduler = (torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
-                 if experiment in {'scheduler', 'regularized'} else None)
+                 if experiment == 'scheduler' or experiment in REGULARIZED_EXPERIMENTS else None)
     print('experiment', experiment, 'device', device, 'train', len(used_train_rows),
           'validation', len(val_rows), 'epochs', epochs, flush=True)
     print('parameters total', sum(p.numel() for p in model.parameters()),
@@ -338,11 +355,12 @@ def run(experiment, epochs):
             'architecture': type(model).__name__,
             'third_feature_channels': getattr(model, 'third_channels', 32),
             'final_feature_channels': getattr(model, 'feature_channels', 32),
+            'max_pool_layers': sum(isinstance(layer, nn.MaxPool2d) for layer in model.features),
             'optimizer': type(optimizer).__name__,
             'weight_decay': weight_decay,
             'dropout_p': model.classifier[1].p,
             'augmentation': ('RandomHorizontalFlip(p=0.5) on training only'
-                             if experiment in {'augment', 'regularized'} else 'none'),
+                             if experiment == 'augment' or experiment in REGULARIZED_EXPERIMENTS else 'none'),
             'scheduler': ({'name': 'ReduceLROnPlateau', 'monitor': 'validation_loss',
                            'factor': 0.5, 'patience': 2} if scheduler is not None else None),
         },
@@ -360,6 +378,7 @@ def run(experiment, epochs):
         'architecture': type(model).__name__,
         'third_feature_channels': getattr(model, 'third_channels', 32),
         'final_feature_channels': getattr(model, 'feature_channels', 32),
+        'max_pool_layers': sum(isinstance(layer, nn.MaxPool2d) for layer in model.features),
         'strategy': experiment, 'model_state_dict': best_state,
         'class_to_idx': manifest['class_to_idx'],
         'split_fingerprint': manifest['fingerprint'],
@@ -374,7 +393,9 @@ def run(experiment, epochs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('experiment', choices=[
-        'baseline', 'augment', 'dropout', 'dropout_05', 'avg_pool', 'weight_decay', 'scheduler', 'four_conv', 'four_conv_64',
+        'baseline', 'augment', 'dropout', 'dropout_05', 'avg_pool', 'weight_decay', 'scheduler',
+        'four_conv', 'four_conv_64', 'four_conv_128', 'four_conv_128_4pool',
+        'four_conv_128_4pool_regularized',
         'regularized', 'imbalance_shuffle', 'balanced_batches', 'bce',
     ])
     parser.add_argument('--epochs', type=int, default=10)
