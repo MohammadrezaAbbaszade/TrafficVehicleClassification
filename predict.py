@@ -87,29 +87,27 @@ def predict_image(image_path, checkpoint_path=DEFAULT_CHECKPOINT):
         return predictor.predict(image)
 
 
-def format_prediction_json(result):
-    """Render numeric JSON values in plain decimal notation."""
-    def fixed_number(value):
-        return format(Decimal(str(value)), "f")
+def format_prediction_percentages(result):
+    """Format display values as percentages while preserving the raw prediction."""
+    def percentage(value):
+        text = format(Decimal(str(value)) * 100, "f")
+        if "." in text:
+            text = text.rstrip("0").rstrip(".")
+        return f"{text}%"
 
-    probability_items = list(result["probabilities"].items())
-    lines = [
-        "{",
-        f'  "predicted_class": {json.dumps(result["predicted_class"], ensure_ascii=False)},',
-        f'  "confidence": {fixed_number(result["confidence"])},',
-        '  "probabilities": {',
-    ]
-    for index, (class_name, value) in enumerate(probability_items):
-        comma = "," if index < len(probability_items) - 1 else ""
-        lines.append(
-            f"    {json.dumps(class_name, ensure_ascii=False)}: {fixed_number(value)}{comma}"
-        )
-    lines.extend([
-        "  },",
-        f'  "needs_review": {json.dumps(result["needs_review"])}',
-        "}",
-    ])
-    return "\n".join(lines)
+    return {
+        **result,
+        "confidence": percentage(result["confidence"]),
+        "probabilities": {
+            name: percentage(value)
+            for name, value in result["probabilities"].items()
+        },
+    }
+
+
+def format_prediction_json(result):
+    """Use the same percentage presentation as the HTTP response."""
+    return json.dumps(format_prediction_percentages(result), ensure_ascii=False, indent=2)
 
 
 def main():

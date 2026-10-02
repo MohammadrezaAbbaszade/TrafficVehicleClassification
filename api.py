@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
-from predict import VehiclePredictor
+from predict import VehiclePredictor, format_prediction_percentages
 
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -16,8 +16,10 @@ app = FastAPI(title="Traffic Vehicle Classification", version="1.0.0")
 
 class PredictionResponse(BaseModel):
     predicted_class: str
-    confidence: float = Field(ge=0.0, le=1.0)
-    probabilities: dict[str, float]
+    confidence: str = Field(description="Percentage, without scientific notation", examples=["93%"])
+    probabilities: dict[str, str] = Field(
+        description="Class probabilities as percentage strings, without scientific notation"
+    )
     needs_review: bool
 
 
@@ -59,6 +61,6 @@ def predict_upload(
         raise HTTPException(status_code=400, detail="The uploaded file is not a readable image") from exc
 
     try:
-        return predictor.predict(image)
+        return format_prediction_percentages(predictor.predict(image))
     finally:
         image.close()
