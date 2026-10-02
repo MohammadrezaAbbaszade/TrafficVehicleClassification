@@ -64,3 +64,9 @@ def predict_upload(
         return format_prediction_percentages(predictor.predict(image))
     finally:
         image.close()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)

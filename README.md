@@ -81,32 +81,33 @@ The ResNet18 preprocessing is deliberately simple: resize the supplied vehicle c
 
 The full table is expanded below. It contains **all 18 current-split CNN runs** plus both selection criteria for each of the **two ResNet18 training stages**: 22 evaluation rows representing 20 training runs/stages. All rows evaluate the same **867 validation images**. The simulated-imbalance pair uses fewer training images, as shown.
 
-**How to read the losses:** `Train loss` and `Val loss at selected epoch` come from the epoch whose accuracy is shown. `Lowest val loss in run` is the minimum over the entire recorded trajectory and can come from a different epoch. CNN checkpoints are selected by highest validation accuracy. ResNet18 rows explicitly distinguish minimum-loss and maximum-accuracy selection. Two selection rows for one ResNet18 stage are two evaluations of the same training history, not independent experiments.
+**How to read the losses:** `Train loss` and `Val loss at selected epoch` come from the epoch whose accuracy is shown. `Lowest val loss in run` is the minimum over the entire recorded trajectory; the accuracy beside it was measured in that same epoch, which can differ from the selected epoch. CNN checkpoints are selected by highest validation accuracy. ResNet18 rows explicitly distinguish minimum-loss and maximum-accuracy selection. Two selection rows for one ResNet18 stage are two evaluations of the same training history, not independent experiments.
 
-| Experiment / evaluated checkpoint | Train images | Selected / total epochs | Correct / validation | Val accuracy | Macro-F1 | Train loss at selected epoch | Val loss at selected epoch | Lowest val loss in run |
+| Experiment / evaluated checkpoint | Train images | Selected / total epochs | Correct / validation | Val accuracy | Macro-F1 | Train loss at selected epoch | Val loss at selected epoch | Lowest val loss in run; accuracy then |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Two-convolution CNN baseline — 30 epochs | 3,469 | 24/30 | 743/867 | 85.7% | 0.8574 | 0.0004 | 0.9704 | 0.6247 (ep. 4) |
-| Two-convolution CNN baseline — 10 epochs | 3,469 | 10/10 | 737/867 | 85.0% | 0.8486 | 0.0110 | 0.7770 | 0.6247 (ep. 4) |
-| Baseline + horizontal flip | 3,469 | 23/30 | 736/867 | 84.9% | 0.8483 | 0.0043 | 0.9288 | 0.5848 (ep. 7) |
-| Baseline + Dropout(0.3) | 3,469 | 11/30 | 734/867 | 84.7% | 0.8453 | 0.0502 | 0.7812 | 0.6277 (ep. 4) |
-| Baseline + Dropout(0.5) | 3,469 | 15/30 | 737/867 | 85.0% | 0.8504 | 0.0361 | 0.7808 | 0.5881 (ep. 4) |
-| Baseline with two AvgPool layers | 3,469 | 11/30 | 728/867 | 84.0% | 0.8392 | 0.0332 | 0.8831 | 0.6446 (ep. 4) |
-| Baseline + weight decay 1e-4 | 3,469 | 29/30 | 738/867 | 85.1% | 0.8491 | 0.0004 | 0.9757 | 0.6309 (ep. 4) |
-| Baseline + learning-rate scheduler | 3,469 | 24/30 | 743/867 | 85.7% | 0.8565 | 0.0038 | 0.7738 | 0.6247 (ep. 4) |
-| Baseline + combined regularization | 3,469 | 14/30 | 740/867 | 85.4% | 0.8510 | 0.0491 | 0.6201 | 0.5835 (ep. 10) |
-| Simulated imbalance + shuffled batches | 1,512 | 24/30 | 654/867 | 75.4% | 0.7336 | 0.0009 | 1.4573 | 0.9248 (ep. 5) |
-| Simulated imbalance + balanced batches | 1,512 | 11/30 | 663/867 | 76.5% | 0.7491 | 0.0059 | 1.2097 | 0.9924 (ep. 3) |
-| Baseline with BCEWithLogitsLoss | 3,469 | 14/30 | 741/867 | 85.5% | 0.8536 | 0.0020 | 0.2087 | 0.1329 (ep. 5) |
-| Four convolutions, 16→32→32→32; two MaxPool | 3,469 | 27/30 | 741/867 | 85.5% | 0.8515 | 0.0002 | 1.3276 | 0.6220 (ep. 4) |
-| Four convolutions, 16→32→64→64; two MaxPool | 3,469 | 26/30 | 743/867 | 85.7% | 0.8532 | 0.000069 | 1.4758 | 0.6055 (ep. 5) |
-| Four convolutions, 16→32→64→128; two MaxPool | 3,469 | 19/30 | 744/867 | 85.8% | 0.8573 | 0.0182 | 1.0625 | 0.5469 (ep. 4) |
-| Four convolutions, 16→32→64→128; four MaxPool | 3,469 | 15/30 | 768/867 | 88.6% | 0.8855 | 0.0027 | 0.7434 | 0.4695 (ep. 6) |
-| **Four MaxPool + combined regularization (best CNN)** | 3,469 | 20/30 | 788/867 | 90.9% | 0.9078 | 0.0314 | 0.4456 | 0.3951 (ep. 14) |
-| Four AvgPool + combined regularization | 3,469 | 28/30 | 777/867 | 89.6% | 0.8963 | 0.0440 | 0.5062 | 0.4382 (ep. 14) |
-| ResNet18, FC only — minimum validation loss | 3,469 | 30/30 | 797/867 | 91.9% | — | 0.1256 | 0.2274 | 0.2274 (ep. 30) |
-| ResNet18, FC only — highest validation accuracy | 3,469 | 24/30 | 804/867 | 92.7% | — | 0.1478 | 0.2301 | 0.2274 (ep. 30) |
-| ResNet18, layer4 + FC — minimum validation loss | 3,469 | 5/30 | 822/867 | 94.8% | — | 0.0097 | 0.1643 | 0.1643 (ep. 5) |
-| **ResNet18, layer4 + FC — highest validation accuracy (used by the API)** | 3,469 | 19/30 | 833/867 | 96.1% | 0.9614 | 0.000022 | 0.2145 | 0.1643 (ep. 5) |
+| Two-convolution CNN baseline — 30 epochs | 3,469 | 24/30 | 743/867 | 85.7% | 0.8574 | 0.0004 | 0.9704 | 0.6247 (ep. 4; acc. 81.9%) |
+| Two-convolution CNN baseline — 10 epochs | 3,469 | 10/10 | 737/867 | 85.0% | 0.8486 | 0.0110 | 0.7770 | 0.6247 (ep. 4; acc. 81.9%) |
+| Baseline + horizontal flip | 3,469 | 23/30 | 736/867 | 84.9% | 0.8483 | 0.0043 | 0.9288 | 0.5848 (ep. 7; acc. 83.2%) |
+| Baseline + Dropout(0.3) | 3,469 | 11/30 | 734/867 | 84.7% | 0.8453 | 0.0502 | 0.7812 | 0.6277 (ep. 4; acc. 81.1%) |
+| Baseline + Dropout(0.5) | 3,469 | 15/30 | 737/867 | 85.0% | 0.8504 | 0.0361 | 0.7808 | 0.5881 (ep. 4; acc. 81.8%) |
+| Baseline with two AvgPool layers | 3,469 | 11/30 | 728/867 | 84.0% | 0.8392 | 0.0332 | 0.8831 | 0.6446 (ep. 4; acc. 79.8%) |
+| Baseline + weight decay 1e-4 | 3,469 | 29/30 | 738/867 | 85.1% | 0.8491 | 0.0004 | 0.9757 | 0.6309 (ep. 4; acc. 81.0%) |
+| Baseline + learning-rate scheduler | 3,469 | 24/30 | 743/867 | 85.7% | 0.8565 | 0.0038 | 0.7738 | 0.6247 (ep. 4; acc. 81.9%) |
+| Baseline + combined regularization | 3,469 | 14/30 | 740/867 | 85.4% | 0.8510 | 0.0491 | 0.6201 | 0.5835 (ep. 10; acc. 84.4%) |
+| Simulated imbalance + shuffled batches | 1,512 | 24/30 | 654/867 | 75.4% | 0.7336 | 0.0009 | 1.4573 | 0.9248 (ep. 5; acc. 72.1%) |
+| Simulated imbalance + balanced batches | 1,512 | 11/30 | 663/867 | 76.5% | 0.7491 | 0.0059 | 1.2097 | 0.9924 (ep. 3; acc. 71.9%) |
+| Baseline with BCEWithLogitsLoss | 3,469 | 14/30 | 741/867 | 85.5% | 0.8536 | 0.0020 | 0.2087 | 0.1329 (ep. 5; acc. 84.0%) |
+| Four convolutions, 16→32→32→32; two MaxPool | 3,469 | 27/30 | 741/867 | 85.5% | 0.8515 | 0.0002 | 1.3276 | 0.6220 (ep. 4; acc. 79.2%) |
+| Four convolutions, 16→32→64→64; two MaxPool | 3,469 | 26/30 | 743/867 | 85.7% | 0.8532 | 0.000069 | 1.4758 | 0.6055 (ep. 5; acc. 82.8%) |
+| Four convolutions, 16→32→64→128; two MaxPool | 3,469 | 19/30 | 744/867 | 85.8% | 0.8573 | 0.0182 | 1.0625 | 0.5469 (ep. 4; acc. 83.6%) |
+| Four convolutions, 16→32→64→128; four MaxPool | 3,469 | 15/30 | 768/867 | 88.6% | 0.8855 | 0.0027 | 0.7434 | 0.4695 (ep. 6; acc. 85.8%) |
+| **Four MaxPool + combined regularization (best CNN)** | 3,469 | 20/30 | 788/867 | 90.9% | 0.9078 | 0.0314 | 0.4456 | 0.3951 (ep. 14; acc. 90.2%) |
+| Four AvgPool + combined regularization | 3,469 | 28/30 | 777/867 | 89.6% | 0.8963 | 0.0440 | 0.5062 | 0.4382 (ep. 14; acc. 88.1%) |
+| ResNet18, FC only — minimum validation loss | 3,469 | 30/30 | 797/867 | 91.9% | — | 0.1256 | 0.2274 | 0.2274 (ep. 30; acc. 91.9%) |
+| ResNet18, FC only — highest validation accuracy | 3,469 | 24/30 | 804/867 | 92.7% | — | 0.1478 | 0.2301 | 0.2274 (ep. 30; acc. 91.9%) |
+| ResNet18, layer4 + FC — minimum validation loss | 3,469 | 5/30 | 822/867 | 94.8% | — | 0.0097 | 0.1643 | 0.1643 (ep. 5; acc. 94.8%) |
+| **ResNet18, layer4 + FC — highest validation accuracy (used by the API)** | 3,469 | 19/30 | 833/867 | 96.1% | 0.9614 | 0.000022 | 0.2145 | 0.1643 (ep. 5; acc. 94.8%) |
+
 
 Macro-F1 weights each class equally. `—` means that metric was not retained for that evaluated epoch; it is not zero. Train loss is accumulated while weights change throughout an epoch; validation loss is measured after the epoch with training-only behavior disabled.
 
@@ -230,11 +231,19 @@ The command-line interface accepts one image path and writes JSON:
 python predict.py /path/to/cropped_vehicle.jpg
 ```
 
-Start the local FastAPI server from the repository root:
+To start the FastAPI server in PyCharm, open `api.py`, select the project's `.venv` interpreter, and click **Run**. The file starts Uvicorn at `http://127.0.0.1:8000`. From a terminal in the repository root, the equivalent direct command is:
 
 ```bash
-uvicorn api:app --host 127.0.0.1 --port 8000
+.venv/bin/python api.py
 ```
+
+You can also start the same app through Uvicorn's module command:
+
+```bash
+.venv/bin/python -m uvicorn api:app --host 127.0.0.1 --port 8000
+```
+
+Stop the previous server before starting another one on port `8000`; otherwise the new process reports `address already in use`. Restart the server after changing API code so it loads the new version.
 
 Open `http://127.0.0.1:8000/docs` for the interactive upload form. In Postman, send **POST** `http://127.0.0.1:8000/predict`, choose **Body → form-data**, create a key named **`file`**, set its type to **File**, and select an image. The same request with `curl` is:
 
