@@ -186,6 +186,7 @@ Exact hashes and perceptual groups reduce leakage from identified duplicates, bu
 ```text
 api.py                    FastAPI upload and health endpoints
 predict.py                Reusable ResNet18 predictor and JSON CLI
+predict_folder.py         Folder inference, with optional labeled evaluation
 scripts/data_split.py     Private, duplicate-aware development split
 scripts/run_experiments.py CNN ablations and checkpoint/report writing
 notebooks/01_data_audit.ipynb
@@ -273,6 +274,20 @@ curl -X POST http://127.0.0.1:8000/predict \
   "needs_review": false
 }
 ```
+
+For a folder of images, use the batch predictor. An unlabeled folder can be flat or nested; it produces one numeric prediction record per image:
+
+```bash
+python predict_folder.py /path/to/images --output .local/predictions.json
+```
+
+When images are grouped under class folders (`ambulance/`, `autobus/`, and so on), add `--labeled` to compute accuracy. A `neysan/` folder is evaluated as the existing `vanet` output class. The result reports accuracy on the eight-class images, on all images including neysan, and on neysan alone:
+
+```bash
+python predict_folder.py /path/to/labeled_images --labeled --output .local/evaluation.json
+```
+
+The batch JSON keeps probabilities as numbers in `[0, 1]` for programmatic evaluation; the single-image CLI and API display percentages. The optional `.local/` output directory is excluded from Git. The script loads one checkpoint and reuses it for every image.
 
 Both the API and CLI format `confidence` and `probabilities` as **percentage strings**. For example, a raw probability of `4e-6` is returned as `"0.0004%"`, with the multiplication by 100 already applied. Fixed decimal formatting avoids scientific notation without rounding small nonzero probabilities down to zero. The internal predictor still uses numerical probabilities in `[0, 1]`; `needs_review` compares those raw values with the stored threshold before formatting. Consumers that need a numerical percentage can remove `%` and parse the remaining decimal; divide by 100 to recover a probability.
 
