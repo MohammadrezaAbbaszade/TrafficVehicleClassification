@@ -24,18 +24,18 @@ def image_paths(directory):
     return paths
 
 
-def source_label(image_path, directory, class_names):
+def source_label(image_path, directory, class_names, neysan_label="vanet"):
     parts = image_path.relative_to(directory).parts
     if len(parts) < 2:
         raise ValueError(
             f"Labeled mode needs class subfolders; image is at the root: {parts[0]}"
         )
     label = parts[0].casefold()
-    mapped_label = "vanet" if label == "neysan" else label
-    if mapped_label not in class_names:
+    target_label = neysan_label if label == "neysan" else label
+    if label != "neysan" and target_label not in class_names:
         expected = ", ".join(class_names + ["neysan"])
         raise ValueError(f"Unknown class folder {parts[0]!r}; expected: {expected}")
-    return label, mapped_label
+    return label, target_label
 
 
 def accuracy_summary(rows):
@@ -45,7 +45,11 @@ def accuracy_summary(rows):
     return {"images": len(rows), "correct": correct, "accuracy": correct / len(rows)}
 
 
-def predict_directory(directory, checkpoint_path=DEFAULT_CHECKPOINT, labeled=False):
+def predict_directory(
+    directory, checkpoint_path=DEFAULT_CHECKPOINT, labeled=False, neysan_label="vanet"
+):
+    if neysan_label not in {"vanet", "neysan"}:
+        raise ValueError("neysan_label must be 'vanet' or 'neysan'")
     directory = Path(directory).expanduser().resolve()
     paths = image_paths(directory)
     predictor = VehiclePredictor(checkpoint_path)
@@ -54,7 +58,9 @@ def predict_directory(directory, checkpoint_path=DEFAULT_CHECKPOINT, labeled=Fal
     for path in paths:
         source = target = None
         if labeled:
-            source, target = source_label(path, directory, predictor.class_names)
+            source, target = source_label(
+                path, directory, predictor.class_names, neysan_label
+            )
         try:
             with Image.open(path) as image:
                 result = predictor.predict(image)
@@ -68,11 +74,15 @@ def predict_directory(directory, checkpoint_path=DEFAULT_CHECKPOINT, labeled=Fal
             record["correct"] = result["predicted_class"] == target
         records.append(record)
 
-    output = {"mode": "labeled" if labeled else "unlabeled", "images": records}
+    output = {
+        "mode": "labeled" if labeled else "unlabeled",
+        "model_classes": predictor.class_names,
+        "images": records,
+    }
     if labeled:
         ordinary = [row for row in records if row["source_label"] != "neysan"]
         neysan = [row for row in records if row["source_label"] == "neysan"]
-        output["label_mapping"] = {"neysan": "vanet"}
+        output["label_mapping"] = {"neysan": neysan_label}
         output["metrics"] = {
             "without_neysan": accuracy_summary(ordinary),
             "with_neysan": accuracy_summary(records),
@@ -92,12 +102,21 @@ def main():
     )
     parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
     parser.add_argument(
+        "--neysan-label", choices=["vanet", "neysan"], default="vanet",
+        help=(
+            "Ground-truth policy for a neysan/ folder: map to vanet (default) "
+            "or keep neysan as a separate ninth class"
+        ),
+    )
+    parser.add_argument(
         "--output", type=Path,
         help="Save JSON to a local path instead of printing it to standard output",
     )
     args = parser.parse_args()
 
-    result = predict_directory(args.directory, args.checkpoint, args.labeled)
+    result = predict_directory(
+        args.directory, args.checkpoint, args.labeled, args.neysan_label
+    )
     rendered = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
     if args.output is None:
         print(rendered, end="")

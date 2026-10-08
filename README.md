@@ -287,6 +287,8 @@ When images are grouped under class folders (`ambulance/`, `autobus/`, and so on
 python predict_folder.py /path/to/labeled_images --labeled --output .local/evaluation.json
 ```
 
+For a dataset whose ground truth treats `neysan` as a separate ninth class, add `--neysan-label neysan`. This evaluates against that label without silently remapping it to `vanet`. The selected model still has only eight outputs, so it cannot predict the separate ninth class; use this option to report that limitation honestly, not as a substitute for training a nine-class model.
+
 The batch JSON keeps probabilities as numbers in `[0, 1]` for programmatic evaluation; the single-image CLI and API display percentages. The optional `.local/` output directory is excluded from Git. The script loads one checkpoint and reuses it for every image.
 
 Both the API and CLI format `confidence` and `probabilities` as **percentage strings**. For example, a raw probability of `4e-6` is returned as `"0.0004%"`, with the multiplication by 100 already applied. Fixed decimal formatting avoids scientific notation without rounding small nonzero probabilities down to zero. The internal predictor still uses numerical probabilities in `[0, 1]`; `needs_review` compares those raw values with the stored threshold before formatting. Consumers that need a numerical percentage can remove `%` and parse the remaining decimal; divide by 100 to recover a probability.
