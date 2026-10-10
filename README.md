@@ -13,6 +13,20 @@ An eight-class classifier for cropped traffic-camera vehicle images. The project
 
 This is a crop classifier, not a vehicle detector for full traffic scenes. The confidence value is a model score, not a calibrated guarantee that the prediction is correct.
 
+### Selected model: from image to prediction
+
+```mermaid
+flowchart LR
+    A["Vehicle crop<br/>RGB image"] --> B["Resize to 224 × 224<br/>Tensor + ImageNet normalization"]
+    B --> C["ResNet18 backbone<br/>conv1 → layer1 → layer2 → layer3 → layer4"]
+    C --> D["Global average pooling<br/>512 features"]
+    D --> E["FC classifier<br/>512 → 8 logits"]
+    E --> F["Softmax<br/>eight class scores"]
+    F --> G["Top class + confidence<br/>needs_review flag"]
+```
+
+Each input is one cropped vehicle image; the model returns scores for all eight classes. The highest softmax score determines the predicted class and confidence. The `needs_review` flag is set when that score falls below the checkpoint's 90% review threshold. During training, the new `fc` classifier was trained first; `layer4` and `fc` were then fine-tuned together while earlier backbone stages remained frozen. This diagram describes the selected direct-resize checkpoint used by the API; the exploratory Letterbox checkpoints are separate.
+
 ## Data and evaluation protocol
 
 The source images are private and are **not included in this repository**. Two supplied data batches were used for development. Following the updated evaluation guidance, the earlier supplied `test` folder could be included in the development pool; the actual final test set is held separately by the evaluators and was never used for model selection.
