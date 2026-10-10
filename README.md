@@ -79,7 +79,7 @@ The ResNet18 preprocessing is deliberately simple: resize the supplied vehicle c
 
 ## Complete experiment results
 
-The full table is expanded below. It contains **all 18 current-split CNN runs** plus both selection criteria for each of the **two ResNet18 training stages**: 22 evaluation rows representing 20 training runs/stages. All rows evaluate the same **867 validation images**. The simulated-imbalance pair uses fewer training images, as shown.
+The main comparison table below contains **all 18 current-split CNN runs** plus both selection criteria for each of the **two original ResNet18 training stages**: 22 evaluation rows representing 20 training runs/stages. Later exploratory Letterbox runs are reported separately below. All rows evaluate the same **867 validation images**. The simulated-imbalance pair uses fewer training images, as shown.
 
 **How to read the losses:** `Train loss` and `Val loss at selected epoch` come from the epoch whose accuracy is shown. `Lowest val loss in run` is the minimum over the entire recorded trajectory; the accuracy beside it was measured in that same epoch, which can differ from the selected epoch. CNN checkpoints are selected by highest validation accuracy. ResNet18 rows explicitly distinguish minimum-loss and maximum-accuracy selection. Two selection rows for one ResNet18 stage are two evaluations of the same training history, not independent experiments.
 
@@ -154,6 +154,18 @@ The final weights, class mapping, preprocessing parameters, selection metadata, 
 
 At inference time, `models.resnet18(weights=None)` creates the architecture without loading the original ImageNet weights. After replacing `fc` with an eight-class layer, `load_state_dict(checkpoint["model_state_dict"])` restores the saved project weights, including the fine-tuned layers. The predictor therefore uses the trained checkpoint rather than a newly initialized model. `eval()` and `torch.inference_mode()` then configure the forward pass for inference.
 
+### Exploratory Letterbox ResNet18 runs
+
+A separate two-stage ResNet18 experiment preserves each vehicle crop's aspect ratio by fitting the whole image inside a black 224×224 canvas. Both training and inference read the same Letterbox setting from the candidate checkpoint; the original direct-resize checkpoint remains the API default. The split, class mapping, seed, ImageNet initialization, batch size, and 30-epoch budget per stage are unchanged. The combined variant additionally uses training-only horizontal flip (`p=0.5`), Dropout (`p=0.3`) before the eight-class linear head, Adam weight decay (`1e-4`), and `ReduceLROnPlateau` on validation loss (`factor=0.5`, `patience=2`). BatchNorm remains frozen. These four settings were previously combined on the CNN, not on the selected ResNet18.
+
+| ResNet18 fine-tuning variant | Correct / validation | Selected epoch / 30 | Val accuracy | Val loss at selected epoch |
+|---|---:|---:|---:|---:|
+| Direct resize, selected API checkpoint | 833/867 | 19 | 96.1% | 0.2145 |
+| Letterbox alone | 831/867 | 17 | 95.8% | 0.2416 |
+| Letterbox + four combined settings | 834/867 | 13 | 96.2% | 0.1837 |
+
+Checkpoints were selected by highest validation accuracy. The combined variant exceeds the current API model by **one image** on this development split; the difference is too small to establish a general improvement, and the same validation set guided model selection. Its review threshold is inherited only as an uncalibrated reference. The candidate is kept separately at `checkpoints/resnet18_letterbox_combined_layer4_best_accuracy.pt` and is not the API default. Run the final cells of `notebooks/02_cnn_baseline.ipynb` to reproduce these exploratory stages.
+
 ### Retained results from an earlier data split
 
 The record also preserves these two earlier CNN experiments. Their validation set had **467 images**, and their training pools differ from the unified split above. They document earlier measurements and are **not a ranking against the current 867-image results**.
@@ -189,6 +201,11 @@ predict.py                Reusable ResNet18 predictor and JSON CLI
 predict_folder.py         Folder inference, with optional labeled evaluation
 scripts/data_split.py     Private, duplicate-aware development split
 scripts/run_experiments.py CNN ablations and checkpoint/report writing
+scripts/run_resnet_letterbox.py Separate two-stage Letterbox experiment
+scripts/run_resnet_letterbox_combined.py Letterbox plus flip, dropout, weight decay, and scheduler
+scripts/resnet_preprocessing.py Shared direct-resize and Letterbox transforms
+scripts/export_test_predictions.py Private per-folder test JSON exports
+scripts/plot_test_confusion.py Private per-folder confusion matrices
 notebooks/01_data_audit.ipynb
 notebooks/02_cnn_baseline.ipynb
 reports/data_summary.json
@@ -197,7 +214,7 @@ reports/figures/           Aggregate plots
 requirements.txt          Recorded Python dependencies
 ```
 
-The ignored `dataset/`, `dataset_extra/`, `checkpoints/`, and private review/split files are required only where the relevant training or inference step uses them.
+The ignored `dataset/`, `dataset_extra/`, `TestingData/`, `checkpoints/`, `.local/`, and private review/split files are required only where the relevant training or inference step uses them.
 
 ## Setup and reproduction
 

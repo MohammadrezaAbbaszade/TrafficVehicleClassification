@@ -8,7 +8,9 @@ from pathlib import Path
 import torch
 from PIL import Image
 from torch import nn
-from torchvision import models, transforms
+from torchvision import models
+
+from scripts.resnet_preprocessing import make_resnet_transform
 
 
 DEFAULT_CHECKPOINT = Path(__file__).resolve().parent / "checkpoints" / "resnet18_final.pt"
@@ -44,16 +46,19 @@ class VehiclePredictor:
             raise ValueError("Checkpoint review threshold must be between 0 and 1.")
 
         preprocessing = checkpoint["preprocessing"]
-        self.transform = transforms.Compose([
-            transforms.Resize(tuple(preprocessing["resize"])),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=preprocessing["mean"], std=preprocessing["std"]
-            ),
-        ])
+        self.transform = make_resnet_transform(preprocessing)
         self.device = device if device is not None else choose_device()
         self.model = models.resnet18(weights=None)
-        self.model.fc = nn.Linear(self.model.fc.in_features, len(self.class_names))
+        in_features = self.model.fc.in_features
+        dropout_p = float(checkpoint.get("classifier_dropout", 0.0))
+        if not 0.0 <= dropout_p < 1.0:
+            raise ValueError("Checkpoint dropout probability must be in [0, 1)")
+        if dropout_p:
+            self.model.fc = nn.Sequential(
+                nn.Dropout(p=dropout_p), nn.Linear(in_features, len(self.class_names))
+            )
+        else:
+            self.model.fc = nn.Linear(in_features, len(self.class_names))
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.model = self.model.to(self.device)
         self.model.eval()
