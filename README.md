@@ -93,7 +93,7 @@ The ResNet18 preprocessing is deliberately simple: resize the supplied vehicle c
 
 ## Complete experiment results
 
-The main comparison table below contains **all 18 current-split CNN runs** plus both selection criteria for each of the **two original ResNet18 training stages**: 22 evaluation rows representing 20 training runs/stages. Later exploratory Letterbox runs are reported separately below. All rows evaluate the same **867 validation images**. The simulated-imbalance pair uses fewer training images, as shown.
+The main comparison table below contains **all 18 current-split CNN runs**, both selection criteria for each of the **two original ResNet18 training stages**, and the selected checkpoints from **two exploratory Letterbox fine-tuning runs**: 24 evaluation rows. A focused Letterbox comparison also appears below. All rows evaluate the same **867 validation images**. The simulated-imbalance pair uses fewer training images, as shown.
 
 **How to read the losses:** `Train loss` and `Val loss at selected epoch` come from the epoch whose accuracy is shown. `Lowest val loss in run` is the minimum over the entire recorded trajectory; the accuracy beside it was measured in that same epoch, which can differ from the selected epoch. CNN checkpoints are selected by highest validation accuracy. ResNet18 rows explicitly distinguish minimum-loss and maximum-accuracy selection. Two selection rows for one ResNet18 stage are two evaluations of the same training history, not independent experiments.
 
@@ -121,11 +121,13 @@ The main comparison table below contains **all 18 current-split CNN runs** plus 
 | ResNet18, FC only — highest validation accuracy | 3,469 | 24/30 | 804/867 | 92.7% | — | 0.1478 | 0.2301 | 0.2274 (ep. 30; acc. 91.9%) |
 | ResNet18, layer4 + FC — minimum validation loss | 3,469 | 5/30 | 822/867 | 94.8% | — | 0.0097 | 0.1643 | 0.1643 (ep. 5; acc. 94.8%) |
 | **ResNet18, layer4 + FC — highest validation accuracy (used by the API)** | 3,469 | 19/30 | 833/867 | 96.1% | 0.9614 | 0.000022 | 0.2145 | 0.1643 (ep. 5; acc. 94.8%) |
+| ResNet18, Letterbox, layer4 + FC — highest validation accuracy | 3,469 | 17/30 | 831/867 | 95.8% | — | 0.000029 | 0.2416 | 0.1903 (ep. 5; acc. 93.7%) |
+| **ResNet18, Letterbox + combined settings, layer4 + FC — highest validation accuracy (exploratory)** | 3,469 | 13/30 | 834/867 | **96.2%** | — | 0.0008 | 0.1837 | 0.1394 (ep. 4; acc. 95.0%) |
 
 
 Macro-F1 weights each class equally. `—` means that metric was not retained for that evaluated epoch; it is not zero. Train loss is accumulated while weights change throughout an epoch; validation loss is measured after the epoch with training-only behavior disabled.
 
-The underlying metrics and histories are in [experiment_results.json](reports/experiment_results.json). The 30-epoch CNN baseline summary is in that record, while its full history is saved in the private baseline checkpoint and used by the [notebook's comparison tables](notebooks/02_cnn_baseline.ipynb).
+The original-run metrics and histories are in [experiment_results.json](reports/experiment_results.json). The 30-epoch CNN baseline summary is in that record, while its full history is saved in the private baseline checkpoint and used by the [notebook's comparison tables](notebooks/02_cnn_baseline.ipynb). The two Letterbox rows use histories stored in their separate local checkpoints; the final notebook cells reproduce those runs with the private data.
 
 ### Comparisons that need different interpretation
 
