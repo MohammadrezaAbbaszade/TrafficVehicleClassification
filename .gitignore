@@ -19,3 +19,4 @@ __pycache__/
 /reports/*inventory*.csv
 /reports/*duplicate*.json
 /reports/imbalance_indices.json
+/TestingData/
